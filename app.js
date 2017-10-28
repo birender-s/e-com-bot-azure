@@ -1,52 +1,126 @@
-/*-----------------------------------------------------------------------------
-A simple echo bot for the Microsoft Bot Framework. 
------------------------------------------------------------------------------*/
+var Logger = require('bunyan'),
+restify = require('restify'),
+log = new Logger.createLogger({
+    name: 'app-name',
+    serializers: {
+        req: Logger.stdSerializers.req
+    }
+}),
+server = restify.createServer({
+    name: 'app-name',
+    version: '0.1.0',
+    log: log
+});
 
-var restify = require('restify');
-var builder = require('botbuilder');
 
-// Setup Restify Server
-var server = restify.createServer();
+
+// const restify = require('restify');
+var logger  = require('morgan')
+const builder = require('botbuilder');
+
+const greeting = require('./app/recognizer/greeting');
+const commands = require('./app/recognizer/commands');
+const smiles = require('./app/recognizer/smiles');
+
+const dialog = {
+    welcome: require('./app/dialogs/welcome'),
+    categories: require('./app/dialogs/categories'),
+    explore: require('./app/dialogs/explore'),
+    showProduct: require('./app/dialogs/showProduct'),
+    choseVariant: require('./app/dialogs/choseVariant'),
+    showVariant: require('./app/dialogs/showVariant'),
+    addToCart: require('./app/dialogs/addToCart'),
+    showCart: require('./app/dialogs/showCart')
+};
+
+const connector = new builder.ChatConnector({
+    appId: process.env.MICROSOFT_APP_ID,
+    appPassword: process.env.MICROSFT_APP_PASSWORD
+});
+
+const bot = new builder.UniversalBot(connector, {
+    persistConversationData: true
+});
+
+var intents = new builder.IntentDialog({
+    recognizers: [
+        commands,
+        greeting,
+        new builder.LuisRecognizer(process.env.LUIS_ENDPOINT)
+    ],
+    intentThreshold: 0.2,
+    recognizeOrder: builder.RecognizeOrder.series
+});
+
+intents.matches('Greeting', '/welcome');
+intents.matches('ShowTopCategories', '/categories');
+intents.matches('Explore', '/explore');
+intents.matches('Next', '/next');
+intents.matches('ShowProduct', '/showProduct');
+intents.matches('AddToCart', '/addToCart');
+intents.matches('ShowCart', '/showCart');
+intents.matches('Checkout', '/checkout');
+intents.matches('Reset', '/reset');
+intents.matches('Smile', '/smileBack');
+intents.onDefault('/confused');
+
+bot.dialog('/', intents);
+dialog.welcome(bot);
+dialog.categories(bot);
+dialog.explore(bot);
+dialog.showProduct(bot);
+dialog.choseVariant(bot);
+dialog.showVariant(bot);
+dialog.addToCart(bot);
+dialog.showCart(bot);
+
+bot.dialog('/confused', [
+    function (session, args, next) {
+        // ToDo: need to offer an option to say "help"
+        if (session.message.text.trim()) {
+            session.endDialog('Sorry, I didn\'t understand you or maybe just lost track of our conversation');
+        } else {
+            session.endDialog();
+        }        
+    }
+]);
+
+bot.on('routing', smiles.smileBack.bind(smiles));
+
+bot.dialog('/reset', [
+    function (session, args, next) {
+        session.endConversation(['See you later!', 'bye!']);
+    }
+]);
+
+bot.dialog('/checkout', [
+    function (session, args, next) {
+        const cart = session.privateConversationData.cart;
+
+        if (!cart || !cart.length) {
+            session.send('I would be happy to check you out but your cart appears to be empty. Look around and see if you like anything');
+            session.reset('/categories');
+        } else {
+            session.endDialog('Alright! You are all set!');
+        }
+    }
+]);
+
+// const server = restify.createServer();
+
+server.pre(function (request, response, next) {
+    request.log.info({ req: request }, 'REQUEST');
+    next();
+});
+
+
+
 server.listen(process.env.port || process.env.PORT || 3978, function () {
-   console.log('%s listening to %s', server.name, server.url); 
+    console.log('%s listening to %s', server.name, server.url);
 });
-  
-// Create chat connector for communicating with the Bot Framework Service
-var connector = new builder.ChatConnector({
-    appId: process.env.MicrosoftAppId,
-    appPassword: process.env.MicrosoftAppPassword,
-    stateEndpoint: process.env.BotStateEndpoint,
-    openIdMetadata: process.env.BotOpenIdMetadata 
-});
-
-// Listen for messages from users 
+server.get(/.*/, restify.serveStatic({
+    'directory': '.',
+    'default': 'index.html'
+}));
 server.post('/api/messages', connector.listen());
-
-/*----------------------------------------------------------------------------------------
-* Bot Storage: This is a great spot to register the private state storage for your bot. 
-* We provide adapters for Azure Table, CosmosDb, SQL Azure, or you can implement your own!
-* For samples and documentation, see: https://github.com/Microsoft/BotBuilder-Azure
-* ---------------------------------------------------------------------------------------- */
-
-// Create your bot with a function to receive messages from the user
-var bot = new builder.UniversalBot(connector);
-
-// Make sure you add code to validate these fields
-var luisAppId = process.env.LuisAppId;
-var luisAPIKey = process.env.LuisAPIKey;
-var luisAPIHostName = process.env.LuisAPIHostName || 'westus.api.cognitive.microsoft.com';
-
-const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v1/application?id=' + luisAppId + '&subscription-key=' + luisAPIKey;
-
-// Main dialog with LUIS
-var recognizer = new builder.LuisRecognizer(LuisModelUrl);
-var intents = new builder.IntentDialog({ recognizers: [recognizer] })
-/*
-.matches('<yourIntent>')... See details at http://docs.botframework.com/builder/node/guides/understanding-natural-language/
-*/
-.onDefault((session) => {
-    session.send('Sorry, I did not understand \'%s\'.', session.message.text);
-});
-
-bot.dialog('/', intents);    
 
