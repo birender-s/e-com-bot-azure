@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 var Logger = require('bunyan'),
 restify = require('restify'),
 log = new Logger.createLogger({
@@ -116,6 +118,7 @@ server.pre(function (request, response, next) {
 
 
 server.listen(process.env.port || process.env.PORT || 3978, function () {
+    console.log('process.env.MICROSOFT_APP_ID:  %s', process.env.MICROSOFT_APP_ID);
     console.log('%s listening to %s', server.name, server.url);
 });
 server.get(/.*/, restify.serveStatic({
