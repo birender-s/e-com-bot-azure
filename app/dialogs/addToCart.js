@@ -130,18 +130,22 @@ module.exports = function (bot) {
         function (session, args, next) {
             session.sendTyping();
 
-            recommendations
-                .recommend([args.variant.sku])
-                .then((variants) => {
-                    session.sendTyping();
+            //TODO: commenting out Recommendation API call as it currently throws 404 error. TO be fixed
 
-                    if (!variants.length) {
-                        session.reset('/showCart');
-                    } else {
-                        session.dialogData.recommendations = variants;
-                        next();
-                    }
-                });
+            session.reset('/showCart');
+
+            // recommendations
+            //     .recommend([args.variant.sku])
+            //     .then((variants) => {
+            //         session.sendTyping();
+
+            //         if (!variants.length) {
+            //             session.reset('/showCart');
+            //         } else {
+            //             session.dialogData.recommendations = variants;
+            //             next();
+            //         }
+            //     });
         },
         ...sentiment.confirm('I also have a few recommendations for you, would you like to see them?'),
         function (session, args, next) {

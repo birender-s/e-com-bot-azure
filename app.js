@@ -1,4 +1,7 @@
 require('dotenv').config();
+var http = require('http-debug').http;
+
+http.debug = 0;
 
 var Logger = require('bunyan'),
 restify = require('restify'),
