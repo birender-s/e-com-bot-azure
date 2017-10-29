@@ -61,6 +61,8 @@ const showRecommendations = function (session) {
 
     Promise.all(session.dialogData.recommendations.map(offer => {
         return new Promise((resolve, reject) => {
+
+            console.log("inside recommendations...")
             search
                 .findVariantBySku(offer.items[0].id)
                 .then((variants) => {
