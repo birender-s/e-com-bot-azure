@@ -8,6 +8,14 @@ const build = process.env.RECOMMENDATION_BUILD;
 
 module.exports = {
     recommend: function (skus, howmany = 3, threashold = 0.5) {
+
+console.log("recommendations request log...");
+console.log(`${url}/${model}/recommend/item?build=${build}` +
+`&itemIds=${skus.join(',')}` +
+`&numberOfResults=${howmany}` +
+`&minimalScore=${threashold}` +
+`&includeMetadata=false`);
+
         return request({
             url: `${url}/${model}/recommend/item?build=${build}` +
                  `&itemIds=${skus.join(',')}` +
