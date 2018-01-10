@@ -1,5 +1,13 @@
 require('dotenv').config();
 var http = require('http-debug').http;
+const moltin = require('moltin');
+
+// const moltin = require('@moltin/sdk');
+//bir
+const Moltin = moltin.gateway({
+    client_id: process.env.MOLTIN_PUBLIC_ID,
+    client_secret: process.env.MOLTIN_SECRET_KEY
+  });
 
 http.debug = 0;
 
@@ -101,12 +109,32 @@ bot.dialog('/reset', [
 bot.dialog('/checkout', [
     function (session, args, next) {
         const cart = session.privateConversationData.cart;
-
+        
+        // //add local cart items to Moltin Cart...
+        // //bir
+        // console.log('Moltin Auth begin...');
+        
+        // Moltin.Authenticate().then((response) => {
+        //     console.log('authenticated', response);
+        //     //Add local session cart to Moltin
+        //     const cart = session.privateConversationData.cart;
+        //     const cards = cart.map(item => 
+        //         Moltin.Cart.AddProduct(item.variant.id).then((cart) => {
+        //             console.log('cart', cart);
+        //           })
+                
+        // );
+    
+        // });
+        
         if (!cart || !cart.length) {
             session.send('I would be happy to check you out but your cart appears to be empty. Look around and see if you like anything');
             session.reset('/categories');
         } else {
             session.endDialog('Alright! You are all set!');
+            //empty cart after checkout, just for now
+            //TODO: this has to be reverted later...
+            cart.map.emptyCart;
         }
     }
 ]);
