@@ -131,10 +131,11 @@ bot.dialog('/checkout', [
             session.send('I would be happy to check you out but your cart appears to be empty. Look around and see if you like anything');
             session.reset('/categories');
         } else {
-            session.endDialog('Alright! You are all set!');
             //empty cart after checkout, just for now
             //TODO: this has to be reverted later...
-            cart.map.emptyCart;
+            session.privateConversationData.cart = [];
+
+            session.endDialog('Alright! You are all set!');
         }
     }
 ]);
